@@ -11,11 +11,10 @@
 #include <stdlib.h>
 
 #define LOG_SQLITE3_ERROR(db) TraceLog(LOG_ERROR, "%s:%d: SQLITE3 ERROR: %s\n", __FILE__, __LINE__, sqlite3_errmsg(db))
+#define NUMBER_OF_FRUITS = 9
+#define ROWS 3
+#define COLUMNS 3
 
-/*
-* Fonction qui affiche des fruits spécifique, on utilise une valeur passé en paramètre
-* pour donner une valeur à un ? dans une requêtes SQL.
-*/
 void see_state_fruits(sqlite3* db,char* state_name){
     sqlite3_stmt* stmt = NULL;
     char content[] =
@@ -27,32 +26,18 @@ void see_state_fruits(sqlite3* db,char* state_name){
     if(ret != SQLITE_OK){
         LOG_SQLITE3_ERROR(db);
     }
-    /*
-    IMPORTANT:
-        Est nécessaire à la requête car elle a un ?. On peut avoir plusieurs ?
-        dans une requête donc nous aurons alors besoin d'autant de bind que de ?.
-        Si vous ne binder pas de valeur au ?, il y aura une erreur.
-        Si on a plusieurs ?, les index des ? seront 1,2,3,etc. Les index devront être
-        spécifiés après le paramètre statement à chaque opération de bind.
-        Voir exemple, add_random_fruit.
-    */
+
     if(sqlite3_bind_text(stmt,1,state_name,-1,SQLITE_STATIC) != SQLITE_OK){
         LOG_SQLITE3_ERROR(db);
     }
 
-    /*
-    Ici On créer une boucle parce que les requêtes SQL vont retourner plusieurs ranger exemple:
-        Orange|0.85 --- Première ranger
-        Lemon|1.25  --- Deuxième ranger
-    La boucle continue tant que step retourne une ranger(row)
-    */
     for(int ret = sqlite3_step(stmt);ret != SQLITE_DONE;ret = sqlite3_step(stmt)){
         if(ret != SQLITE_ROW){
             LOG_SQLITE3_ERROR(db);
         }
         int column = 0;
-        const unsigned char* fruit = sqlite3_column_text(stmt,column++); //Permet d'aller chercher le nom du fruit
-        float price = sqlite3_column_double(stmt,column); //Permet d'aller chercher le prix du fruit
+        const unsigned char* fruit = sqlite3_column_text(stmt,column++);
+        float price = sqlite3_column_double(stmt,column);
         TraceLog(LOG_INFO,"Etat %s a le fruit %s avec le prix %.2f$",state_name,fruit,price);
     }
 
@@ -120,27 +105,37 @@ void raylib_start(void){
     GuiLoadStyleDefault();
 
     while(!WindowShouldClose()){
+        
+        Image FruitImg = LoadImage("Fruits.png");
+        Texture2D FruitSprite = LoadTextureFromImage(FruitImg);
+
         BeginDrawing();
         ClearBackground(BLACK);
+
         Vector2 cursor = {0};
-        Rectangle box = {.x= cursor.x,.y=cursor.y,.width=200,.height=50};
-        cursor.y += box.height;
 
-        Rectangle butt_rekt = {.x = cursor.x,.y=cursor.y,.width=200,.height=50};
-        if(GuiButton(butt_rekt,"Add New Fruit !")){
-            add_random_fruit(db);
-        }
-
-        static int chosen_state = 0;
-        static bool dropdown_clicked = false;
-        if(GuiDropdownBox(box,"CA;SC;NC;FL;HA",&chosen_state,dropdown_clicked)){
-            if(dropdown_clicked){
-                see_state_fruits(db,states[chosen_state]);
+        for (int row = 1; row <= ROWS; row++) {
+            for (int col = 1; col <= COLUMNS; col++) {
+                int StepsCols = 128 / 4;
+                int StepsRows = 128 / 4;
+                int ColumnSize = 720/3;
+                int RowSize = 480 / 3;
+                int FruitRowSize = RowSize - 50;
+                int InfoRowSize = RowSize - FruitRowSize;
+                Rectangle src = {StepsCols * (col - 1), StepsRows * (row - 1), 32, 32};
+                Rectangle dest = {cursor.x, cursor.y, ColumnSize, FruitRowSize};
+                DrawTexturePro(FruitSprite, src, dest, CLITERAL(Vector2){0}, 0, WHITE);
+                DrawText("Prix:", cursor.x, cursor.y + FruitRowSize, 30, WHITE);
+                cursor.x += ColumnSize;
+                if (col == 3) {cursor.y += RowSize; cursor.x = 0;}; //Changement de rangée
             }
-            dropdown_clicked = !dropdown_clicked;
         }
 
         EndDrawing();
+
+        UnloadTexture(FruitSprite);
+        UnloadImage(FruitImg);
+
     }
     CloseWindow();
 
