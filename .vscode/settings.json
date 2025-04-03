@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.jinja": "jinja-html",
         "*.inc": "c",
         "assert.h": "c",
         "limits.h": "c",
@@ -24,7 +25,8 @@
         "functional": "c",
         "direct.h": "c",
         "filesystem": "c",
-        "future": "c"
+        "future": "c",
+        "raygui.h": "c"
     },
     "cmake.configureOnOpen": false
 }

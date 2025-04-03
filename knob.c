@@ -27,6 +27,11 @@ bool build_raylib(Knob_File_Paths* end_cmd,Knob_Config* config)
     bool result = true;
     Knob_Cmd cmd = {0};
 
+    if(!knob_mkdir_if_not_exists("build/raylib")){
+        result = false;
+        goto defer;
+    }
+
     Knob_Procs procs = {0};
     char* compiler = knob_temp_sprintf("%s%s",ZIG_PATH,GET_COMPILER_NAME(config->compiler));
     for (size_t i = 0; i < KNOB_ARRAY_LEN(raylib_modules); ++i) {
@@ -69,73 +74,18 @@ defer:
     return result;
 }
 
-#define IMGUI_PATH "Libraries"PATH_SEP"imgui"
-bool build_rlImGui(Knob_File_Paths* end_cmd,Knob_Config* config)
-{
-    bool result = true;
-    Knob_Cmd cmd = {0};
-
-    Knob_Config conf = {0};
-    knob_config_init(&conf);
-    conf.compiler = config->compiler;
-    conf.compiler_path = config->compiler_path;
-    conf.debug_mode = config->debug_mode;
-
-    Knob_File_Paths files = {0};
-    knob_da_mult_append(&files,
-        //UI
-        IMGUI_PATH"/imgui.cpp",
-        IMGUI_PATH"/imgui_draw.cpp",
-        IMGUI_PATH"/imgui_tables.cpp",
-        IMGUI_PATH"/imgui_widgets.cpp",
-        IMGUI_PATH"/imgui_demo.cpp",
-        //------------------------------
-        "Libraries/rlImGui/rlImGui.cpp",
-    );
-    knob_config_add_files(&conf,files.items,files.count);
-    files.count = 0;
-
-    knob_da_mult_append(&files,
-        RAYLIB_PATH"/src/external/glfw/include",
-        RAYLIB_PATH"/src",
-        IMGUI_PATH,
-        "Libraries/rlImGui",
-    );
-    knob_config_add_includes(&conf,files.items,files.count);
-    files.count = 0;
-
-    knob_config_add_define(&conf,"-fPIC");
-
-    conf.build_to = RAYLIB_BUILD_PATH;
-    knob_config_build(&conf,&files);
-    for(int i =0; i < files.count; ++i){
-        const char* output_path = files.items[i];
-        knob_da_append(end_cmd,output_path);
-    }
-
-defer:
-    knob_cmd_free(cmd);
-    return result;
-}
-
 MAIN(bd_base){
 
     if(!knob_mkdir_if_not_exists("build")){ return 1;}
     if(!knob_mkdir_if_not_exists("Deployment")){ return 1;}
     if(!knob_mkdir_if_not_exists("build/sqlite")){ return 1;}
-    // if(!knob_mkdir_if_not_exists(RAYLIB_BUILD_PATH)) { return 1; }
-    // if(!knob_mkdir_if_not_exists(RAYLIB_BUILD_PATH PATH_SEP "Libraries")) { return 1; }
-    // if(!knob_mkdir_if_not_exists(RAYLIB_BUILD_PATH PATH_SEP "imgui")) { return 1; }
-    // if(!knob_mkdir_if_not_exists(RAYLIB_BUILD_PATH PATH_SEP "Libraries/rlImGui")) { return 1; }
 
-    if(knob_file_exists("Deployment/imgui.ini")){
-        knob_file_del("Deployment/imgui.ini");
-    }
     Knob_Cmd cmd = {0};
     Knob_Config config = {0};
     knob_config_init(&config);
     config.compiler = COMPILER_ZIG;
     config.compiler_path = ZIG_PATH;
+    config.target = TARGET_WIN64_MINGW;
 
     const char* program = knob_shift_args(&argc,&argv);
     char* subcommand = NULL;
@@ -153,22 +103,22 @@ MAIN(bd_base){
 
 
     Knob_File_Paths o_files = {0};
-    // if(!build_raylib(&o_files,&config))return 1;
-    // if(!build_rlImGui(&o_files,&config))return 1;
+    if(!build_raylib(&o_files,&config))return 1;
 
     Knob_File_Paths files = {0};
     knob_da_mult_append(&files,
         "src",
-        "./sqlite/sqlite3.c"
+        "."PATH_SEP"sqlite"PATH_SEP"sqlite3.c"
     );
     config.build_to = "."PATH_SEP"build";
     knob_config_add_files(&config,files.items,files.count);
     files.count = 0;
     knob_da_mult_append(&files,
         ".",
-        "./src",
-        "./sqlite"
-        // "./Libraries/raylib/src",
+        "."PATH_SEP"src",
+        "."PATH_SEP"sqlite",
+        "."PATH_SEP"Libraries"PATH_SEP"raylib"PATH_SEP"src",
+        "."PATH_SEP"Libraries"PATH_SEP"raygui"PATH_SEP"src"
         // "./Libraries/imgui",
         // "./Libraries/rlImGui",
     );
@@ -187,12 +137,12 @@ MAIN(bd_base){
         knob_cmd_append(&cmd,out_files.items[i]);
     }
 
-    knob_cmd_append(&cmd,"-o","./Deployment/bd.com");
+    knob_cmd_append(&cmd,"-o","."PATH_SEP"Deployment"PATH_SEP"bd.exe");
     for(int i =0; i < config.cpp_flags.count;++i){
         knob_cmd_append(&cmd,config.cpp_flags.items[i]);
     }
-    knob_cmd_append(&cmd,"-lm");
-    knob_cmd_append(&cmd,"-lstdc++");
+    // knob_cmd_append(&cmd,"-lm");
+    // knob_cmd_append(&cmd,"-lstdc++");
     if(config.target == TARGET_WIN64_MINGW || config.target == TARGET_WIN64_MSVC){
         knob_cmd_append(&cmd,"-lgdi32");
         knob_cmd_append(&cmd,"-lwinmm");

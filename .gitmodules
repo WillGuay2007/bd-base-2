@@ -1,3 +1,9 @@
 [submodule "Tools/FoundryTools_windows_x64"]
 	path = Tools/FoundryTools_windows_x64
 	url = https://github.com/mundusnine/FoundryTools_windows_x64.git
+[submodule "Libraries/raygui"]
+	path = Libraries/raygui
+	url = https://github.com/raysan5/raygui.git
+[submodule "Libraries/raylib"]
+	path = Libraries/raylib
+	url = https://github.com/raysan5/raylib.git

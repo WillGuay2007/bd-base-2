@@ -15,7 +15,7 @@
                     "-fno-sanitize=undefined",
                     "-fno-omit-frame-pointer",
                     "-target",
-                    "x86_64-windows",
+                    "x86_64-windows-msvc",
                     "knob.c",
                     "-o",
                     "knob.exe"

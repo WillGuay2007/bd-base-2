@@ -8,7 +8,7 @@
         "name": "(game) Launch",
         "type": "cppvsdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/Deployment/bd.com",
+        "program": "${workspaceFolder}/Deployment/bd.exe",
         "args": [],
         "stopAtEntry": false,
         "cwd": "${workspaceRoot}/Deployment",

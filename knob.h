@@ -1687,6 +1687,7 @@ int knob_config_build(Knob_Config* config,Knob_File_Paths* outs){
         }
     }
     knob_sb_append_cstr(&sb_cmp,compilerpp_names[config->compiler][0]);
+    knob_sb_append_null(&sb_cmp);
     //@TODO: Add if to compiler_path when we have it
     for(int i =0; i < config->cpp_files.count;++i){
         cmd.count = 0;
@@ -1798,6 +1799,7 @@ void knob_cmd_add_compiler(Knob_Cmd* cmd,Knob_Config* config){
         knob_sb_append_cstr(&sb,config->compiler_path);
     }
     knob_sb_append_cstr(&sb,compiler_names[config->compiler][0]);
+    knob_sb_append_null(&sb);
     knob_cmd_append(cmd, sb.items,compiler_names[config->compiler][1]);
     if(config->target == TARGET_LINUX || config->target == TARGET_LINUX_MUSL){// @TODO: Should we add Mingw for plugins ?
         if(config->output_type == BIN_DLL){

@@ -1,11 +1,16 @@
 #include "entrypoint.h"
 #include "sqlite3.h"
-#include "knob.h"
+
+/*
+* On ajoute raylib pour creer la fenetre et raygui pour faire l'interface.
+*/
+#include "raylib.h"
+#include "raygui.h"
 
 #include <time.h>
 #include <stdlib.h>
 
-#define LOG_SQLITE3_ERROR(db) knob_log(KNOB_ERROR, "%s:%d: SQLITE3 ERROR: %s\n", __FILE__, __LINE__, sqlite3_errmsg(db))
+#define LOG_SQLITE3_ERROR(db) TraceLog(LOG_ERROR, "%s:%d: SQLITE3 ERROR: %s\n", __FILE__, __LINE__, sqlite3_errmsg(db))
 
 /*
 * Fonction qui affiche des fruits spécifique, on utilise une valeur passé en paramètre
@@ -48,7 +53,7 @@ void see_state_fruits(sqlite3* db,char* state_name){
         int column = 0;
         const unsigned char* fruit = sqlite3_column_text(stmt,column++); //Permet d'aller chercher le nom du fruit
         float price = sqlite3_column_double(stmt,column); //Permet d'aller chercher le prix du fruit
-        knob_log(KNOB_INFO,"Etat %s a le fruit %s avec le prix %.2f$",state_name,fruit,price);
+        TraceLog(LOG_INFO,"Etat %s a le fruit %s avec le prix %.2f$",state_name,fruit,price);
     }
 
     sqlite3_finalize(stmt);
@@ -108,9 +113,40 @@ void raylib_start(void){
     srand(time(NULL));
     sqlite3* db = NULL;
     sqlite3_open("./fruits.db",&db);
-    see_state_fruits(db,"FL");
-    see_state_fruits(db,"CA");
-    see_state_fruits(db,"NC");
+
+    InitWindow(720,480,"Fruits");
+    SetTargetFPS(60);
+
+    GuiLoadStyleDefault();
+
+    while(!WindowShouldClose()){
+        BeginDrawing();
+        ClearBackground(BLACK);
+        Vector2 cursor = {0};
+        Rectangle box = {.x= cursor.x,.y=cursor.y,.width=200,.height=50};
+        cursor.y += box.height;
+
+        Rectangle butt_rekt = {.x = cursor.x,.y=cursor.y,.width=200,.height=50};
+        if(GuiButton(butt_rekt,"Add New Fruit !")){
+            add_random_fruit(db);
+        }
+
+        static int chosen_state = 0;
+        static bool dropdown_clicked = false;
+        if(GuiDropdownBox(box,"CA;SC;NC;FL;HA",&chosen_state,dropdown_clicked)){
+            if(dropdown_clicked){
+                see_state_fruits(db,states[chosen_state]);
+            }
+            dropdown_clicked = !dropdown_clicked;
+        }
+
+        EndDrawing();
+    }
+    CloseWindow();
+
+    // see_state_fruits(db,"FL");
+    // see_state_fruits(db,"CA");
+    // see_state_fruits(db,"NC");
     // add_random_fruit(db); //Uncomment to add a random fruit...
     sqlite3_close(db);
     return;
