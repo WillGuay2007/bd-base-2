@@ -10,6 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "Declarations.h"
+#include <string.h>
 
 void see_state_fruits(sqlite3* db,char* state_name){
     sqlite3_stmt* stmt = NULL;
@@ -39,42 +40,6 @@ void see_state_fruits(sqlite3* db,char* state_name){
 
     sqlite3_finalize(stmt);
 }
-void add_random_fruit(sqlite3* db){
-    /*
-        Commence une TRANSACTIONS SQL. sqlite3_exec permet d'exécuter
-        une requête SQL qui n'a pas à être préparée vu quel n'a pas de valeur à recevoir du programme C.
-    */
-    if (sqlite3_exec(db, "BEGIN;", NULL, NULL, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return;
-    }
-    sqlite3_stmt* stmt = NULL;
-    char content[] =
-    "INSERT INTO FruitsForSale(fruit,etat,price)\n"
-    "VALUES\n"
-    "(?,?,?);";
-    int ret = sqlite3_prepare_v2(db,content,-1,&stmt,NULL);
-    int fruit = rand() %5;
-    int state = rand() %5;
-    double price = ((rand()+1) % 100) /100 + rand() % 2;
-    if(sqlite3_bind_text(stmt,1,fruits[fruit],-1,SQLITE_STATIC) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-    if(sqlite3_bind_text(stmt,2,states[state],-1,SQLITE_STATIC) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-    if(sqlite3_bind_double(stmt,3,price) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-    ret = sqlite3_step(stmt);
-    /*
-        Ici on fait encore une requête SQL qui roule le SQL directement,
-        mais maintenant on termine la TRANSACTION avec le COMMIT.
-    */
-    if (sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-    }
-}
 int GetFruitCount(sqlite3* db)  {
     sqlite3_stmt* stmt = NULL;
     char content[] = "SELECT COUNT(*) FROM (SELECT * FROM FruitsForSale GROUP BY fruit);";
@@ -83,4 +48,43 @@ int GetFruitCount(sqlite3* db)  {
     int Quantite = sqlite3_column_int(stmt, 0);
     sqlite3_finalize(stmt);
     return Quantite;
+}
+int ReturnFruitIndexByName(const char* fruitName) {
+    int imageIndex = 0;
+    if (strcmp(fruitName, "Apple") == 0) imageIndex = 0;
+    else if (strcmp(fruitName, "Pear") == 0) imageIndex = 1;
+    else if (strcmp(fruitName, "Lemon") == 0) imageIndex = 2;
+    else if (strcmp(fruitName, "Orange") == 0) imageIndex = 3;
+    else if (strcmp(fruitName, "Plum") == 0) imageIndex = 4;
+    else if (strcmp(fruitName, "Kumqat") == 0) imageIndex = 5;
+    else if (strcmp(fruitName, "Pomegranate") == 0) imageIndex = 6;
+    else if (strcmp(fruitName, "Strawberry") == 0) imageIndex = 7;
+    else if (strcmp(fruitName, "Grape") == 0) imageIndex = 8;
+    else if (strcmp(fruitName, "Cherry") == 0) imageIndex = 9;
+    else if (strcmp(fruitName, "Peach") == 0) imageIndex = 10;
+    else if (strcmp(fruitName, "Raspberry") == 0) imageIndex = 11;
+
+    return imageIndex;
+}
+void LoadFruits(sqlite3* db, Fruit Fruits[50]) {
+    sqlite3_stmt* stmt = NULL;
+    char content[] = "SELECT * FROM FruitsForSale GROUP BY fruit;";
+    if (sqlite3_prepare_v2(db,content,-1,&stmt,NULL) != SQLITE_OK) {LOG_SQLITE3_ERROR(db); sqlite3_finalize(stmt); return;}
+
+    int Counter = 0;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        
+        const char* fruitName = (const char*)sqlite3_column_text(stmt, 0);
+        float price = sqlite3_column_int(stmt, 1);
+        const char* etat = (const char*)sqlite3_column_text(stmt, 2);
+        int ImageIndex = ReturnFruitIndexByName(fruitName);
+        
+        Fruits[Counter].name = strdup(fruitName);
+        Fruits[Counter].price = price;
+        Fruits[Counter].state = strdup(etat);
+        Fruits[Counter].imageIndex = ImageIndex;
+
+        Counter++;
+    }
 }

@@ -12,6 +12,8 @@
 #include "Declarations.h"
 #include <math.h>
 
+Fruit Fruits[50];
+
 void raylib_start(void){
     srand(time(NULL));
     sqlite3* db = NULL;
@@ -19,8 +21,13 @@ void raylib_start(void){
 
     int ROWS = 3;
     int COLUMNS = (int)ceil((float)GetFruitCount(db) / 3); //Convertir le nombre en float pour le ceil et ensuite le remettre en int
+    int Width = 720;
+    int Height = 480;
+    int fruitCount = GetFruitCount(db);
 
-    InitWindow(720,480,"Fruits");
+    LoadFruits(db, Fruits);
+
+    InitWindow(Width,Height,"Fruits");
     SetTargetFPS(60);
 
     GuiLoadStyleDefault();
@@ -29,11 +36,40 @@ void raylib_start(void){
         
         Image FruitImg = LoadImage("Fruits.png");
         Texture2D FruitSprite = LoadTextureFromImage(FruitImg);
+        int FruitSpriteSize = 32;
 
         BeginDrawing();
         ClearBackground(BLACK);
 
         Vector2 cursor = {0};
+
+        int ColumnWidth = Width / COLUMNS;
+        int RowHeight = Height / ROWS;
+
+            for (int i = 0; i < fruitCount; i++) {
+                Fruit CurrentFruit = Fruits[i];
+
+                int row = i / COLUMNS;
+                int col = i % COLUMNS;
+
+                Rectangle src = {
+                    (CurrentFruit.imageIndex % 4) * FruitSpriteSize, 
+                    (CurrentFruit.imageIndex / 4) * FruitSpriteSize, 
+                    FruitSpriteSize, 
+                    FruitSpriteSize
+                };
+
+                Rectangle dst = {
+                    col * ColumnWidth, 
+                    row * RowHeight, 
+                    RowHeight, 
+                    RowHeight - 50
+                };
+
+                DrawTexturePro(FruitSprite, src, dst, CLITERAL(Vector2){0, 0}, 0.0f, WHITE);
+                DrawText("Price:", col * ColumnWidth, row * RowHeight, 25, WHITE);
+
+            }
 
         EndDrawing();
 
@@ -46,7 +82,6 @@ void raylib_start(void){
     // see_state_fruits(db,"FL");
     // see_state_fruits(db,"CA");
     // see_state_fruits(db,"NC");
-    // add_random_fruit(db); //Uncomment to add a random fruit...
     sqlite3_close(db);
     return;
 }
