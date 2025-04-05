@@ -24,7 +24,6 @@ typedef struct {
 
 
 
-void see_state_fruits(sqlite3* db,char* state_name);
 int GetFruitCount(sqlite3* db);
 int ReturnFruitIndexByName(const char* fruitName);
 void LoadFruits(sqlite3* db, Fruit Fruits[50]);

@@ -31,9 +31,9 @@ void raylib_start(void){
     SetTargetFPS(60);
 
     GuiLoadStyleDefault();
+    float Money = 100;
 
     while(!WindowShouldClose()){
-        
         Image FruitImg = LoadImage("Fruits.png");
         Texture2D FruitSprite = LoadTextureFromImage(FruitImg);
         int FruitSpriteSize = 32;
@@ -62,12 +62,24 @@ void raylib_start(void){
                 Rectangle dst = {
                     col * ColumnWidth, 
                     row * RowHeight, 
-                    RowHeight, 
+                    ColumnWidth, 
                     RowHeight - 50
                 };
 
+                Rectangle ButtonRect = {
+                    col * ColumnWidth,
+                    row * RowHeight + RowHeight - 50,
+                    ColumnWidth,
+                    RowHeight - (RowHeight - 50)
+                };
+
+                if (GuiButton(ButtonRect, "Buy")) {
+                    if (Money - CurrentFruit.price > 0) Money -= CurrentFruit.price;
+                }
+
                 DrawTexturePro(FruitSprite, src, dst, CLITERAL(Vector2){0, 0}, 0.0f, WHITE);
-                DrawText("Price:", col * ColumnWidth, row * RowHeight, 25, WHITE);
+                DrawText(TextFormat("Price: %.2f$", CurrentFruit.price), col * ColumnWidth, row * RowHeight, 25, WHITE);
+                DrawText(TextFormat("Money: %.2f$", Money), Width - 175, Height - 20, 20, WHITE);
 
             }
 
@@ -78,10 +90,10 @@ void raylib_start(void){
 
     }
     CloseWindow();
-
-    // see_state_fruits(db,"FL");
-    // see_state_fruits(db,"CA");
-    // see_state_fruits(db,"NC");
     sqlite3_close(db);
+
+    // Pour l'achat de fruits, je fait juste retirer de l'argent.
+    // J'ai pas changé la database, mais ca devrait marcher pareil si on la change je crois.
+
     return;
 }

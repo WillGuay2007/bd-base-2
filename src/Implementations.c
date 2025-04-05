@@ -12,34 +12,6 @@
 #include "Declarations.h"
 #include <string.h>
 
-void see_state_fruits(sqlite3* db,char* state_name){
-    sqlite3_stmt* stmt = NULL;
-    char content[] =
-    "SELECT fruit,price\n"
-    "FROM FruitsForSale\n"
-    "WHERE etat=?;";// <---------------IMPORTANT: Le ? seras défini plus tard avec la fonction bind_text (ligne 33)
-    int ret = sqlite3_prepare_v2(db,content,-1,&stmt,NULL);
-
-    if(ret != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-
-    if(sqlite3_bind_text(stmt,1,state_name,-1,SQLITE_STATIC) != SQLITE_OK){
-        LOG_SQLITE3_ERROR(db);
-    }
-
-    for(int ret = sqlite3_step(stmt);ret != SQLITE_DONE;ret = sqlite3_step(stmt)){
-        if(ret != SQLITE_ROW){
-            LOG_SQLITE3_ERROR(db);
-        }
-        int column = 0;
-        const unsigned char* fruit = sqlite3_column_text(stmt,column++);
-        float price = sqlite3_column_double(stmt,column);
-        TraceLog(LOG_INFO,"Etat %s a le fruit %s avec le prix %.2f$",state_name,fruit,price);
-    }
-
-    sqlite3_finalize(stmt);
-}
 int GetFruitCount(sqlite3* db)  {
     sqlite3_stmt* stmt = NULL;
     char content[] = "SELECT COUNT(*) FROM (SELECT * FROM FruitsForSale GROUP BY fruit);";
@@ -76,10 +48,9 @@ void LoadFruits(sqlite3* db, Fruit Fruits[50]) {
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         
         const char* fruitName = (const char*)sqlite3_column_text(stmt, 0);
-        float price = sqlite3_column_int(stmt, 1);
+        float price = sqlite3_column_double(stmt, 1);
         const char* etat = (const char*)sqlite3_column_text(stmt, 2);
         int ImageIndex = ReturnFruitIndexByName(fruitName);
-        
         Fruits[Counter].name = strdup(fruitName);
         Fruits[Counter].price = price;
         Fruits[Counter].state = strdup(etat);
